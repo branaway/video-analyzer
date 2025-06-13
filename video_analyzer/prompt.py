@@ -13,7 +13,18 @@ class PromptLoader:
 
     def _find_prompt_file(self, prompt_path: str) -> Path:
         """Find prompt file in package resources, package directory, or user directory."""
-        # First try package resources (works for both install modes)
+        # First check the user-specified directory, if provided. This allows
+        # custom prompts to override the packaged defaults.
+        if self.prompt_dir:
+            user_base = Path(self.prompt_dir).expanduser()
+            if user_base.is_absolute():
+                candidate = user_base / prompt_path
+            else:
+                candidate = Path.cwd() / user_base / prompt_path
+            if candidate.exists():
+                return candidate
+
+        # Then try package resources (works for both installed and editable modes)
         try:
             package_path = pkg_resources.resource_filename('video_analyzer', f'prompts/{prompt_path}')
             if Path(package_path).exists():
@@ -21,25 +32,11 @@ class PromptLoader:
         except Exception as e:
             logger.debug(f"Could not find package prompt via pkg_resources: {e}")
 
-        # Try package directory (for development mode)
+        # Finally fall back to the package directory (for development mode)
         pkg_root = Path(__file__).parent
         pkg_path = pkg_root / 'prompts' / prompt_path
         if pkg_path.exists():
             return pkg_path
-
-        # Finally try user-specified directory if provided
-        if self.prompt_dir:
-            user_path = Path(self.prompt_dir).expanduser()
-            # Try absolute path
-            if user_path.is_absolute():
-                full_path = user_path / prompt_path
-                if full_path.exists():
-                    return full_path
-            else:
-                # Try relative to current directory
-                cwd_path = Path.cwd() / self.prompt_dir / prompt_path
-                if cwd_path.exists():
-                    return cwd_path
 
         raise FileNotFoundError(
             f"Prompt file not found in package resources, package directory, or user directory ({self.prompt_dir})"
