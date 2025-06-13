@@ -86,7 +86,7 @@ Transitions between described frames feel natural
 Format Your Summary As:
 
 ```
-IDEO SUMMARY
+VIDEO SUMMARY
 Duration: [if provided in notes]
 
 [Opening paragraph - based on your viewed frame]
